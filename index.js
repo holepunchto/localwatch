@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const { Readable } = require('streamx')
-const { IS_LINUX } = require('which-runtime')
+const { isLinux } = require('which-runtime')
 
 class TreeEntry {
   constructor (stat, ignore) {
@@ -14,7 +14,7 @@ class TreeEntry {
 
   watch (filename, onchange) {
     if (this.watcher || this.ignore) return
-    this.watcher = fs.watch(filename, { recursive: true }, (_, sub) => onchange(path.join(filename, sub)))
+    this.watcher = fs.watch(filename, { recursive: !isLinux }, (_, sub) => onchange(path.join(filename, sub)))
   }
 
   update (filename, stat, diff) {
@@ -229,7 +229,7 @@ module.exports = class Localwatch extends Readable {
       const child = node.put(entry, name, stat, diff, ignore)
       if (!stat.isDirectory() || ignore) continue
 
-      if (IS_LINUX) child.watch(entry, this._onchangeBound)
+      if (isLinux) child.watch(entry, this._onchangeBound)
       await this._walkDirectory(child, entry, diff)
     }
   }
