@@ -1,0 +1,22 @@
+{
+  "name": "localwatch",
+  "version": "0.0.0",
+  "description": "Watch a directory and get a diff of changes",
+  "main": "index.js",
+  "devDependencies": {
+    "standard": "^17.1.0"
+  },
+  "scripts": {
+    "test": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/holepunchto/localwatch.git"
+  },
+  "author": "Holepunch Inc.",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/holepunchto/localwatch/issues"
+  },
+  "homepage": "https://github.com/holepunchto/localwatch"
+}
