@@ -32,10 +32,13 @@ Options include
 
 ```js
 {
-  // function that returns true if it should watch it, defaults to ignoring .git and corestores
+  // function that returns true if it should watch it
+  // defaults to ignoring .git and corestores
   filter (filename, stream) { ... },
   // use relative paths in the diff
-  relative: false
+  relative: false,
+  // include hidden files (.something)
+  hidden: false
 }
 ```
 

@@ -84,17 +84,18 @@ class TreeEntry {
 }
 
 module.exports = class Localwatch extends Readable {
-  constructor (root, { filter = defaultFilter, relative = false } = {}) {
+  constructor (root, { filter = defaultFilter, relative = false, hidden = false } = {}) {
     super({ highWaterMark: 0 }) // disable readahead
 
     this.root = path.resolve('.', root)
+    this.hidden = hidden
+    this.filter = filter
+    this.relative = relative
 
     this._tree = new TreeEntry(null, false)
     this._tick = 1
     this._checks = new Set()
     this._readCallback = null
-    this._filter = filter
-    this._relative = relative
     this._onchangeBound = this._onchange.bind(this)
   }
 
@@ -130,7 +131,7 @@ module.exports = class Localwatch extends Readable {
     }
 
     if (diff.length) {
-      if (this._relative) {
+      if (this.relative) {
         for (const d of diff) d.filename = '.' + d.filename.slice(this.root.length)
       }
       this.push(diff)
@@ -215,6 +216,8 @@ module.exports = class Localwatch extends Readable {
     node.tick = this._tick
 
     for (const name of await readdir(nodeEntry)) {
+      if (!this.hidden && name.startsWith('.')) continue
+
       const entry = path.join(nodeEntry, name)
       const stat = await lstat(entry)
 
@@ -223,7 +226,7 @@ module.exports = class Localwatch extends Readable {
         continue
       }
 
-      const ignore = !this._filter(entry, this)
+      const ignore = !this.filter(entry, this)
       if (node.ignore) return // side-effect check
 
       const child = node.put(entry, name, stat, diff, ignore)
