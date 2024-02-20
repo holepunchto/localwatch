@@ -43,7 +43,7 @@ class TreeEntry {
     for (const [entryFilename, node] of this.list(filename)) {
       if (node.watcher) node.watcher.close()
       node.watcher = null
-      if (node.entries) continue
+      if (node.entries || node.stat.isDirectory()) continue
       if (!node.ignore) diff.push({ type: 'delete', filename: entryFilename })
     }
     this.entries = null
