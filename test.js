@@ -2,7 +2,7 @@ const test = require('brittle')
 const fs = require('fs')
 const path = require('path')
 const tmp = require('test-tmp')
-const Localwatch = require('localwatch')
+const Localwatch = require('./')
 
 test('basic', async function (t) {
   const fixture = await tmp(t)
