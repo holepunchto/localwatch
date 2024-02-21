@@ -13,7 +13,7 @@ test('basic', async function (t) {
     [{ type: 'update', filename: path.join(fixture, 'foo') }, { type: 'update', filename: path.join(fixture, 'bar') }],
     [{ type: 'update', filename: path.join(fixture, 'a/b/c/d/file') }],
     [{ type: 'update', filename: path.join(fixture, 'a/b/c/d/file') }, { type: 'update', filename: path.join(fixture, 'a/b/file') }],
-    [{ type: 'delete', filename: path.join(fixture, 'a/b/c/d/file') }, { type: 'delete', filename: path.join(fixture, 'a/b/file') }],
+    [{ type: 'delete', filename: path.join(fixture, 'a/b/c/d/file') }, { type: 'delete', filename: path.join(fixture, 'a/b/file') }]
   ]
   const runs = expected.length
 
@@ -26,7 +26,7 @@ test('basic', async function (t) {
 
     switch (runs - expected.length) {
       case 1: {
-        await fs.promises.writeFile(path.join(fixture, 'foo'), 'foo'),
+        await fs.promises.writeFile(path.join(fixture, 'foo'), 'foo')
         await fs.promises.writeFile(path.join(fixture, 'bar'), 'bar')
         break
       }

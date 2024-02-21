@@ -342,5 +342,3 @@ function defaultFilter (filename, stream) {
 
   return true
 }
-
-function noop () {}
