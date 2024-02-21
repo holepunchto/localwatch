@@ -12,9 +12,21 @@ class TreeEntry {
     this.ignore = ignore
   }
 
-  watch (filename, onchange) {
-    if (this.watcher || this.ignore) return
-    this.watcher = fs.watch(filename, { recursive: !isLinux }, (_, sub) => onchange(path.join(filename, sub)))
+  watch (filename, refed, onchange) {
+    if (!this.watcher && !this.ignore) {
+      try {
+        this.watcher = fs.watch(filename, { recursive: !isLinux }, (_, sub) => onchange(path.join(filename, sub || '.')))
+      } catch {}
+    }
+    if (!refed) this.unref()
+  }
+
+  ref () {
+    if (this.watcher) this.watcher.ref()
+  }
+
+  unref () {
+    if (this.watcher) this.watcher.unref()
   }
 
   update (filename, stat, diff) {
@@ -84,19 +96,35 @@ class TreeEntry {
 }
 
 module.exports = class Localwatch extends Readable {
-  constructor (root, { filter = defaultFilter, relative = false, hidden = false } = {}) {
+  constructor (root, {
+    filter = defaultFilter,
+    relative = false,
+    hidden = false,
+    ref = true,
+    settle = true,
+    delay = settle ? 100 : 0
+  } = {}) {
     super({ highWaterMark: 0 }) // disable readahead
 
     this.root = path.resolve('.', root)
     this.hidden = hidden
     this.filter = filter
     this.relative = relative
+    this.delay = delay
+    this.opened = null
 
+    this._refed = ref
+    this._timeout = null
+    this._timeoutResolve = null
+    this._scheduleDelayBound = this._scheduleDelay.bind(this)
     this._tree = new TreeEntry(null, false)
     this._tick = 1
     this._checks = new Set()
     this._readCallback = null
+    this._openCallback = null
     this._onchangeBound = this._onchange.bind(this)
+
+    this.opened = new Promise((resolve) => { this._openCallback = resolve })
   }
 
   static defaultFilter = defaultFilter
@@ -105,10 +133,12 @@ module.exports = class Localwatch extends Readable {
     try {
       await this._walkDirectory(this._tree, this.root, [])
     } catch (err) {
+      this._openCallback(false)
       return cb(err)
     }
 
-    this._tree.watch(this.root, this._onchangeBound)
+    this._tree.watch(this.root, this._refed, this._onchangeBound)
+    this._openCallback(true)
     cb(null)
   }
 
@@ -117,6 +147,9 @@ module.exports = class Localwatch extends Readable {
       this._readCallback = cb
       return
     }
+
+    // wait for it to stabilize...
+    if (this.delay > 0) await this._checksDelay()
 
     const checks = this._checks
     const diff = []
@@ -141,7 +174,31 @@ module.exports = class Localwatch extends Readable {
     this._read(cb)
   }
 
+  _scheduleDelay (resolve) {
+    this._timeoutResolve = resolve
+    this._timeout = setTimeout(resolve, this.delay)
+  }
+
+  async _checksDelay () {
+    while (!this.destroyed) {
+      const queued = this._checks.size
+      await new Promise(this._scheduleDelayBound)
+      this._timeoutResolve = this._timeout = null
+      if (queued === this._checks.size) return
+    }
+  }
+
+  _clearTimeout () {
+    if (!this._timeoutResolve) return
+    const cb = this._timeoutResolve
+    clearTimeout(this._timeout)
+    this._timeout = null
+    this._timeoutResolve = null
+    cb()
+  }
+
   _predestroy () {
+    this._clearTimeout()
     if (this._readCallback) {
       const cb = this._readCallback
       this._readCallback = null
@@ -150,12 +207,26 @@ module.exports = class Localwatch extends Readable {
   }
 
   _destroy (cb) {
+    this._openCallback(false)
+    this._clearTimeout()
     this._tree.clearAll(this.root, [])
     cb(null)
   }
 
   * watching () {
     for (const [filename] of this._tree.list(this.root)) yield filename
+  }
+
+  ref () {
+    if (this._refed) return
+    this._refed = true
+    for (const [, node] of this._tree.list('')) node.ref()
+  }
+
+  unref () {
+    if (!this._refed) return
+    this._refed = false
+    for (const [, node] of this._tree.list('')) node.unref()
   }
 
   ignore (entry) {
@@ -232,7 +303,7 @@ module.exports = class Localwatch extends Readable {
       const child = node.put(entry, name, stat, diff, ignore)
       if (!stat.isDirectory() || ignore) continue
 
-      if (isLinux) child.watch(entry, this._onchangeBound)
+      if (isLinux) child.watch(entry, this._refed, this._onchangeBound)
       await this._walkDirectory(child, entry, diff)
     }
   }
@@ -271,3 +342,5 @@ function defaultFilter (filename, stream) {
 
   return true
 }
+
+function noop () {}

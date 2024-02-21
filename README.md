@@ -38,7 +38,11 @@ Options include
   // use relative paths in the diff
   relative: false,
   // include hidden files (.something)
-  hidden: false
+  hidden: false,
+  // wait for the watched folder to be idle for 100ms
+  // before triggering the batch after a change has happened.
+  // disable this if you the watcher to be fully interactive
+  settle: true
 }
 ```
 
@@ -53,7 +57,7 @@ The stream yields diffs which look like this
 }]
 ```
 
-The diff reflects the changes that happens since the last yield
+The diff reflects the changes that happens since the last yield.
 
 #### `Localwatch.defaultFilter(filename, [stream])`
 
