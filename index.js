@@ -98,6 +98,7 @@ class TreeEntry {
 module.exports = class Localwatch extends Readable {
   constructor (root, {
     filter = defaultFilter,
+    map = null,
     relative = false,
     hidden = false,
     ref = true,
@@ -109,6 +110,7 @@ module.exports = class Localwatch extends Readable {
     this.root = path.resolve('.', root)
     this.hidden = hidden
     this.filter = filter
+    this.map = map
     this.relative = relative
     this.delay = delay
     this.opened = null
@@ -166,6 +168,9 @@ module.exports = class Localwatch extends Readable {
     if (diff.length) {
       if (this.relative) {
         for (const d of diff) d.filename = '.' + d.filename.slice(this.root.length)
+      }
+      if (this.map) {
+        for (let i = 0; i < diff.length; i++) diff[i] = this.map(diff[i])
       }
       this.push(diff)
       return cb(null)
