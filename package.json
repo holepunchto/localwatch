@@ -1,6 +1,6 @@
 {
   "name": "localwatch",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Watch a directory and get a diff of changes",
   "main": "index.js",
   "dependencies": {
