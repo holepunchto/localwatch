@@ -16,9 +16,12 @@ class TreeEntry {
     if (!this.watcher && !this.ignore) {
       try {
         this.watcher = fs.watch(filename, { recursive: !isLinux }, (_, sub) => onchange(path.join(filename, sub || '.')))
-      } catch {}
+      } catch {
+        return false
+      }
     }
     if (!refed) this.unref()
+    return true
   }
 
   ref () {
@@ -139,7 +142,11 @@ module.exports = class Localwatch extends Readable {
       return cb(err)
     }
 
-    this._tree.watch(this.root, this._refed, this._onchangeBound)
+    while (!this.destroying) {
+      if (this._tree.watch(this.root, this._refed, this._onchangeBound)) break
+      await this._poll(100)
+    }
+
     this._openCallback(true)
     cb(null)
   }
@@ -182,6 +189,13 @@ module.exports = class Localwatch extends Readable {
   _scheduleDelay (resolve) {
     this._timeoutResolve = resolve
     this._timeout = setTimeout(resolve, this.delay)
+  }
+
+  _poll (time) {
+    return new Promise((resolve) => {
+      this._timeoutResolve = resolve
+      this._timeout = setTimeout(resolve, time)
+    })
   }
 
   async _checksDelay () {
