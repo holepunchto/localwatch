@@ -35,6 +35,8 @@ Options include
   // function that returns true if it should watch it
   // defaults to ignoring .git and corestores
   filter (filename, stream) { ... },
+  // optionally map the diff entries
+  map (entry) { return ... },
   // use relative paths in the diff
   relative: false,
   // include hidden files (.something)

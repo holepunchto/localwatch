@@ -102,13 +102,14 @@ module.exports = class Localwatch extends Readable {
   constructor (root, {
     filter = defaultFilter,
     map = null,
+    mapReadable,
     relative = false,
     hidden = false,
     ref = true,
     settle = true,
     delay = settle ? 100 : 0
   } = {}) {
-    super({ highWaterMark: 0 }) // disable readahead
+    super({ highWaterMark: 0, mapReadable }) // disable readahead
 
     this.root = path.resolve('.', root)
     this.hidden = hidden
