@@ -7,7 +7,7 @@
     "index.js"
   ],
   "dependencies": {
-    "bare-fs": "^3.0.2",
+    "bare-fs": "^4.0.1",
     "bare-path": "^3.0.0",
     "streamx": "^2.16.1",
     "which-runtime": "^1.2.0"
