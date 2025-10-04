@@ -10,10 +10,19 @@ test('basic', async function (t) {
 
   const expected = [
     [{ type: 'update', filename: path.join(fixture, 'foo') }],
-    [{ type: 'update', filename: path.join(fixture, 'foo') }, { type: 'update', filename: path.join(fixture, 'bar') }],
+    [
+      { type: 'update', filename: path.join(fixture, 'foo') },
+      { type: 'update', filename: path.join(fixture, 'bar') }
+    ],
     [{ type: 'update', filename: path.join(fixture, 'a/b/c/d/file') }],
-    [{ type: 'update', filename: path.join(fixture, 'a/b/c/d/file') }, { type: 'update', filename: path.join(fixture, 'a/b/file') }],
-    [{ type: 'delete', filename: path.join(fixture, 'a/b/c/d/file') }, { type: 'delete', filename: path.join(fixture, 'a/b/file') }]
+    [
+      { type: 'update', filename: path.join(fixture, 'a/b/c/d/file') },
+      { type: 'update', filename: path.join(fixture, 'a/b/file') }
+    ],
+    [
+      { type: 'delete', filename: path.join(fixture, 'a/b/c/d/file') },
+      { type: 'delete', filename: path.join(fixture, 'a/b/file') }
+    ]
   ]
   const runs = expected.length
 
@@ -32,7 +41,9 @@ test('basic', async function (t) {
       }
 
       case 2: {
-        await fs.promises.mkdir(path.join(fixture, 'a/b/c/d'), { recursive: true })
+        await fs.promises.mkdir(path.join(fixture, 'a/b/c/d'), {
+          recursive: true
+        })
         await fs.promises.writeFile(path.join(fixture, 'a/b/c/d/file'), 'file')
         break
       }
@@ -53,7 +64,7 @@ test('basic', async function (t) {
   }
 })
 
-function cmp (a, b) {
+function cmp(a, b) {
   const k1 = a.type + '@' + a.filename
   const k2 = b.type + '@' + b.filename
   return k1 < k2 ? -1 : k1 > k2 ? 1 : 0

@@ -8,10 +8,10 @@ npm install localwatch
 
 ## Usage
 
-``` js
+```js
 const Localwatch = require('localwatch')
 
- // watch a dir
+// watch a dir
 const watch = new Localwatch('./my/dir')
 
 // watch is a readable stream

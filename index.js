@@ -4,7 +4,7 @@ const { Readable } = require('streamx')
 const { isLinux } = require('which-runtime')
 
 class TreeEntry {
-  constructor (stat, ignore) {
+  constructor(stat, ignore) {
     this.watcher = null
     this.stat = stat
     this.entries = null
@@ -12,10 +12,12 @@ class TreeEntry {
     this.ignore = ignore
   }
 
-  watch (filename, refed, onchange) {
+  watch(filename, refed, onchange) {
     if (!this.watcher && !this.ignore) {
       try {
-        this.watcher = fs.watch(filename, { recursive: !isLinux }, (_, sub) => onchange(path.join(filename, sub || '.')))
+        this.watcher = fs.watch(filename, { recursive: !isLinux }, (_, sub) =>
+          onchange(path.join(filename, sub || '.'))
+        )
       } catch {
         return false
       }
@@ -24,37 +26,38 @@ class TreeEntry {
     return true
   }
 
-  ref () {
+  ref() {
     if (this.watcher) this.watcher.ref()
   }
 
-  unref () {
+  unref() {
     if (this.watcher) this.watcher.unref()
   }
 
-  update (filename, stat, diff) {
+  update(filename, stat, diff) {
     if (this.stat && this.stat.mtime.getTime() === stat.mtime.getTime()) return
-    if (this.stat && this.stat.isDirectory() !== stat.isDirectory()) this.clearAll(filename, diff)
+    if (this.stat && this.stat.isDirectory() !== stat.isDirectory())
+      this.clearAll(filename, diff)
     this.stat = stat
     if (!this.stat.isDirectory()) diff.push({ type: 'update', filename })
   }
 
-  * list (filename) {
+  *list(filename) {
     yield [filename, this]
     if (!this.entries) return
     for (const [name, val] of this.entries) {
-      yield * val.list(path.join(filename, name))
+      yield* val.list(path.join(filename, name))
     }
   }
 
-  ignoreAll () {
+  ignoreAll() {
     for (const [, node] of this.list('')) {
       node.ignore = true
     }
     this.clearAll('', [])
   }
 
-  clearAll (filename, diff) {
+  clearAll(filename, diff) {
     for (const [entryFilename, node] of this.list(filename)) {
       if (node.watcher) node.watcher.close()
       node.watcher = null
@@ -64,11 +67,11 @@ class TreeEntry {
     this.entries = null
   }
 
-  get (name) {
+  get(name) {
     return (this.entries && this.entries.get(name)) || null
   }
 
-  del (filename, name, diff) {
+  del(filename, name, diff) {
     if (this.entries === null) return
 
     const existing = this.entries.get(name)
@@ -78,7 +81,7 @@ class TreeEntry {
     existing.clearAll(path.join(filename, name), diff)
   }
 
-  put (filename, name, stat, diff, ignore) {
+  put(filename, name, stat, diff, ignore) {
     if (this.entries === null) this.entries = new Map()
 
     const existing = this.entries.get(name)
@@ -92,24 +95,28 @@ class TreeEntry {
     const node = new TreeEntry(stat, ignore)
     this.entries.set(name, node)
 
-    if (!stat.isDirectory() && !node.ignore) diff.push({ type: 'update', filename })
+    if (!stat.isDirectory() && !node.ignore)
+      diff.push({ type: 'update', filename })
 
     return node
   }
 }
 
 module.exports = class Localwatch extends Readable {
-  constructor (root, {
-    filter = defaultFilter,
-    map = null,
-    mapReadable,
-    relative = false,
-    hidden = false,
-    ref = true,
-    settle = true,
-    delay = settle ? 100 : 0,
-    eagerOpen = false
-  } = {}) {
+  constructor(
+    root,
+    {
+      filter = defaultFilter,
+      map = null,
+      mapReadable,
+      relative = false,
+      hidden = false,
+      ref = true,
+      settle = true,
+      delay = settle ? 100 : 0,
+      eagerOpen = false
+    } = {}
+  ) {
     super({ highWaterMark: 0, mapReadable, eagerOpen }) // disable readahead
 
     this.root = path.resolve('.', root)
@@ -131,12 +138,14 @@ module.exports = class Localwatch extends Readable {
     this._openCallback = null
     this._onchangeBound = this._onchange.bind(this)
 
-    this.opened = new Promise((resolve) => { this._openCallback = resolve })
+    this.opened = new Promise((resolve) => {
+      this._openCallback = resolve
+    })
   }
 
   static defaultFilter = defaultFilter
 
-  async _open (cb) {
+  async _open(cb) {
     try {
       await this._walkDirectory(this._tree, this.root, [])
     } catch (err) {
@@ -153,7 +162,7 @@ module.exports = class Localwatch extends Readable {
     cb(null)
   }
 
-  async _read (cb) {
+  async _read(cb) {
     if (this._checks.size === 0) {
       this._readCallback = cb
       return
@@ -176,7 +185,8 @@ module.exports = class Localwatch extends Readable {
 
     if (diff.length) {
       if (this.relative) {
-        for (const d of diff) d.filename = '.' + d.filename.slice(this.root.length)
+        for (const d of diff)
+          d.filename = '.' + d.filename.slice(this.root.length)
       }
       if (this.map) {
         for (let i = 0; i < diff.length; i++) diff[i] = this.map(diff[i])
@@ -188,19 +198,19 @@ module.exports = class Localwatch extends Readable {
     this._read(cb)
   }
 
-  _scheduleDelay (resolve) {
+  _scheduleDelay(resolve) {
     this._timeoutResolve = resolve
     this._timeout = setTimeout(resolve, this.delay)
   }
 
-  _poll (time) {
+  _poll(time) {
     return new Promise((resolve) => {
       this._timeoutResolve = resolve
       this._timeout = setTimeout(resolve, time)
     })
   }
 
-  async _checksDelay () {
+  async _checksDelay() {
     while (!this.destroyed) {
       const queued = this._checks.size
       await new Promise(this._scheduleDelayBound)
@@ -209,7 +219,7 @@ module.exports = class Localwatch extends Readable {
     }
   }
 
-  _clearTimeout () {
+  _clearTimeout() {
     if (!this._timeoutResolve) return
     const cb = this._timeoutResolve
     clearTimeout(this._timeout)
@@ -218,7 +228,7 @@ module.exports = class Localwatch extends Readable {
     cb()
   }
 
-  _predestroy () {
+  _predestroy() {
     this._clearTimeout()
     if (this._readCallback) {
       const cb = this._readCallback
@@ -227,37 +237,37 @@ module.exports = class Localwatch extends Readable {
     }
   }
 
-  _destroy (cb) {
+  _destroy(cb) {
     this._openCallback(false)
     this._clearTimeout()
     this._tree.clearAll(this.root, [])
     cb(null)
   }
 
-  * watching () {
+  *watching() {
     for (const [filename] of this._tree.list(this.root)) yield filename
   }
 
-  ref () {
+  ref() {
     if (this._refed) return
     this._refed = true
     for (const [, node] of this._tree.list('')) node.ref()
   }
 
-  unref () {
+  unref() {
     if (!this._refed) return
     this._refed = false
     for (const [, node] of this._tree.list('')) node.unref()
   }
 
-  ignore (entry) {
+  ignore(entry) {
     entry = path.resolve(this.root, entry)
     if (!isRooted(this.root, entry)) return
     const [nodeEntry, node] = this._getClosestNode(entry)
     if (nodeEntry === entry) node.ignoreAll()
   }
 
-  _onchange (entry) {
+  _onchange(entry) {
     this._checks.add(entry)
     if (!this._readCallback) return
     const cb = this._readCallback
@@ -265,7 +275,7 @@ module.exports = class Localwatch extends Readable {
     this._read(cb)
   }
 
-  _getClosestNode (entry) {
+  _getClosestNode(entry) {
     const parts = entry.slice(this.root.length).split(/[\\/]/)
 
     let parent = null
@@ -285,7 +295,7 @@ module.exports = class Localwatch extends Readable {
     return [nodeEntry, node, parent]
   }
 
-  async _check (entry, diff) {
+  async _check(entry, diff) {
     const [nodeEntry, node, parent] = this._getClosestNode(entry)
     if (node.ignore) return
 
@@ -303,7 +313,7 @@ module.exports = class Localwatch extends Readable {
     }
   }
 
-  async _walkDirectory (node, nodeEntry, diff) {
+  async _walkDirectory(node, nodeEntry, diff) {
     if (node.tick === this._tick) return
     node.tick = this._tick
 
@@ -330,7 +340,7 @@ module.exports = class Localwatch extends Readable {
   }
 }
 
-async function readdir (entry) {
+async function readdir(entry) {
   try {
     return await fs.promises.readdir(entry)
   } catch {
@@ -338,7 +348,7 @@ async function readdir (entry) {
   }
 }
 
-async function lstat (entry) {
+async function lstat(entry) {
   try {
     return await fs.promises.lstat(entry)
   } catch {
@@ -346,13 +356,17 @@ async function lstat (entry) {
   }
 }
 
-function isRooted (root, filename) {
+function isRooted(root, filename) {
   if (filename === root) return true
   return filename.startsWith(root + path.sep)
 }
 
-function defaultFilter (filename, stream) {
-  if (/[/\\]cores[/\\][0-9a-f]{2}[/\\][0-9a-f]{2}[/\\][0-9a-f]{64}$/i.test(filename)) {
+function defaultFilter(filename, stream) {
+  if (
+    /[/\\]cores[/\\][0-9a-f]{2}[/\\][0-9a-f]{2}[/\\][0-9a-f]{64}$/i.test(
+      filename
+    )
+  ) {
     if (stream) stream.ignore(filename.slice(0, -77))
     return false
   }
