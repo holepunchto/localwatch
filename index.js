@@ -36,8 +36,7 @@ class TreeEntry {
 
   update(filename, stat, diff) {
     if (this.stat && this.stat.mtime.getTime() === stat.mtime.getTime()) return
-    if (this.stat && this.stat.isDirectory() !== stat.isDirectory())
-      this.clearAll(filename, diff)
+    if (this.stat && this.stat.isDirectory() !== stat.isDirectory()) this.clearAll(filename, diff)
     this.stat = stat
     if (!this.stat.isDirectory()) diff.push({ type: 'update', filename })
   }
@@ -95,8 +94,7 @@ class TreeEntry {
     const node = new TreeEntry(stat, ignore)
     this.entries.set(name, node)
 
-    if (!stat.isDirectory() && !node.ignore)
-      diff.push({ type: 'update', filename })
+    if (!stat.isDirectory() && !node.ignore) diff.push({ type: 'update', filename })
 
     return node
   }
@@ -185,8 +183,7 @@ module.exports = class Localwatch extends Readable {
 
     if (diff.length) {
       if (this.relative) {
-        for (const d of diff)
-          d.filename = '.' + d.filename.slice(this.root.length)
+        for (const d of diff) d.filename = '.' + d.filename.slice(this.root.length)
       }
       if (this.map) {
         for (let i = 0; i < diff.length; i++) diff[i] = this.map(diff[i])
@@ -362,11 +359,7 @@ function isRooted(root, filename) {
 }
 
 function defaultFilter(filename, stream) {
-  if (
-    /[/\\]cores[/\\][0-9a-f]{2}[/\\][0-9a-f]{2}[/\\][0-9a-f]{64}$/i.test(
-      filename
-    )
-  ) {
+  if (/[/\\]cores[/\\][0-9a-f]{2}[/\\][0-9a-f]{2}[/\\][0-9a-f]{64}$/i.test(filename)) {
     if (stream) stream.ignore(filename.slice(0, -77))
     return false
   }
