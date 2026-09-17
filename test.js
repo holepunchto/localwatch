@@ -69,3 +69,15 @@ function cmp(a, b) {
   const k2 = b.type + '@' + b.filename
   return k1 < k2 ? -1 : k1 > k2 ? 1 : 0
 }
+
+test('destroying a watcher on an empty directory does not throw', async function (t) {
+  const fixture = await tmp(t)
+  const w = new Localwatch(fixture)
+
+  w.resume()
+  await w.opened
+  w.destroy()
+
+  await new Promise((resolve) => w.once('close', resolve))
+  t.pass('closed cleanly')
+})
