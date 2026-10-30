@@ -81,3 +81,21 @@ test('destroying a watcher on an empty directory does not throw', async function
   await new Promise((resolve) => w.once('close', resolve))
   t.pass('closed cleanly')
 })
+
+test('destroying a watcher while a change settles closes it', async function (t) {
+  const fixture = await tmp(t)
+  const w = new Localwatch(fixture, { ref: false, delay: 2000 })
+
+  w.resume()
+  await w.opened
+  await fs.promises.mkdir(path.join(fixture, 'sub'))
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  const closed = new Promise((resolve) => w.once('close', () => resolve('closed')))
+  w.destroy()
+  const outcome = await Promise.race([
+    closed,
+    new Promise((resolve) => setTimeout(resolve, 1000, 'open').unref())
+  ])
+  t.is(outcome, 'closed')
+})

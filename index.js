@@ -161,6 +161,8 @@ module.exports = class Localwatch extends Readable {
   }
 
   async _read(cb) {
+    if (this.destroying) return cb(null)
+
     if (this._checks.size === 0) {
       this._readCallback = cb
       return
@@ -168,6 +170,7 @@ module.exports = class Localwatch extends Readable {
 
     // wait for it to stabilize...
     if (this.delay > 0) await this._checksDelay()
+    if (this.destroying) return cb(null)
 
     const checks = this._checks
     const diff = []
@@ -208,7 +211,7 @@ module.exports = class Localwatch extends Readable {
   }
 
   async _checksDelay() {
-    while (!this.destroyed) {
+    while (!this.destroying) {
       const queued = this._checks.size
       await new Promise(this._scheduleDelayBound)
       this._timeoutResolve = this._timeout = null
